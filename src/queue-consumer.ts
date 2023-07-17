@@ -20,8 +20,11 @@ export class QueueConsumer {
   queueProcess(job: Job) {
     try {
       this.logger.verbose(`Job received id ${job.id} with name ${job.name}`);
-      const data: PaymentDto = job.data;
-      this.logger.verbose(data);
+      const data = job.data;
+
+      if (data?.test) {
+        this.logger.error('erro');
+      }
 
       if (data.price === 90) {
         throw new Error('Error in processing payment');
@@ -35,11 +38,14 @@ export class QueueConsumer {
   async queueFailed(job: Job, error: Error) {
     if (job.attemptsMade < 2) {
       this.logger.error('Attempt: ', job.attemptsMade);
-      job.queue.add(job.name, job.data, {
-        jobId: job.id,
-        attempts: job.attemptsMade,
-        timeout: 60 * 60 * 60,
-      });
+      await job.queue.add(
+        job.name,
+        { test: true },
+        {
+          attempts: job.opts.attempts,
+          delay: 1 * 60 * 500,
+        },
+      );
     }
   }
 }
